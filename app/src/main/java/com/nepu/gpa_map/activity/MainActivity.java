@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         aMap=mMapView.getMap();
         openBut=findViewById(R.id.open_but);
         UiSettings mUiSettings= aMap.getUiSettings();
+        mUiSettings.setZoomControlsEnabled(false);//缩放按钮的显示与隐藏
         mUiSettings.setCompassEnabled(true);
         mUiSettings.setScaleControlsEnabled(true);
         mUiSettings.setMyLocationButtonEnabled(true);
