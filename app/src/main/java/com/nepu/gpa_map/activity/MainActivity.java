@@ -9,6 +9,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private AMap aMap;
     private RelativeLayout mLayout;
     private MDrawLayout drawLayout;
-    private Button openBut;
+    private View transView;//半透明图层
 
     private Button mMenuButton;
     private Button mItemButton1;
@@ -65,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         DisplayMetrics dis = getResources().getDisplayMetrics();
         Global.width = dis.widthPixels;
         Global.high = dis.heightPixels;
+        mLayout.addView(transView,Global.width,Global.high);
+        transView.setX(0);transView.setY(0);
         mLayout.addView(drawLayout,Global.width,Global.high);
         drawLayout.setX(-Global.width);
         drawLayout.setY(0);
@@ -73,7 +76,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("ClickableViewAccessibility")
     private void InitData(){
         aMap=mMapView.getMap();
-        openBut=findViewById(R.id.open_but);
         UiSettings mUiSettings= aMap.getUiSettings();
         mUiSettings.setZoomControlsEnabled(false);//缩放按钮的显示与隐藏
         mUiSettings.setCompassEnabled(true);
@@ -81,6 +83,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUiSettings.setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
         drawLayout=new MDrawLayout(this);
+        transView=new View(this);
+        transView.setBackgroundColor(Color.GRAY);
+        transView.setAlpha(0.5f);
+        transView.setVisibility(View.INVISIBLE);
         MyLocationStyle myLocationStyle = new MyLocationStyle();//初始化定位蓝点样式类
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_FOLLOW);//连续定位、且将视角移动到地图中心点，定位点依照设备方向旋转，并且会跟随设备移动。（1秒1次定位）如果不设置myLocationType，默认也会执行此种模式。 myLocationStyle.interval(2000); //设置连续定位模式下的定位间隔，只在连续定位模式下生效，单次定位模式下不会生效。单位为毫秒。
         aMap.setMyLocationStyle(myLocationStyle);//设置定位蓝点的Style
@@ -93,14 +99,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }, 3000);    //延时3s执行
         //设置监听
-        openBut.setOnClickListener(new View.OnClickListener() {
+        transView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                if(!drawLayout.isPullOut) {
-                    drawLayout.PullOut();
-                } else {
+            public boolean onTouch(View v, MotionEvent event) {
+                if(drawLayout.isPullOut && event.getAction() == MotionEvent.ACTION_DOWN) {
                     drawLayout.PushIn();
+                    v.setVisibility(View.INVISIBLE);
                 }
+                return true;
             }
         });
     }
@@ -179,8 +185,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 doAnimateClose(mItemButton4, 3, 4, 300);
             }
         } else {
-            //监听事件
-            Toast.makeText(this, "你点击了" + v, Toast.LENGTH_SHORT).show();
+            switch (v.getId()){
+                case R.id.item1:
+                    if(drawLayout!=null &&!drawLayout.isPullOut){
+                        drawLayout.PullOut();
+                        transView.setVisibility(View.VISIBLE);
+                    }
+                    break;
+            }
         }
     }
 
