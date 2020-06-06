@@ -11,14 +11,6 @@
         android:layout_height="match_parent" >
     </com.amap.api.maps.MapView>
 
-    <Button
-        android:id="@+id/open_but"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="50dp"
-        android:text="切换图层" />
-
     <include
         layout="@layout/main"
         />
