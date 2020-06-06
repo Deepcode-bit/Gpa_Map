@@ -12,7 +12,7 @@
     </com.amap.api.maps.MapView>
 
     <include
-        layout="@layout/main"
+        layout="@layout/float_button"
         />
 
 </RelativeLayout>
