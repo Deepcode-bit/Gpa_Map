@@ -6,7 +6,7 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file("C:/Users/Administrator/keys/debug.keystore")
+            storeFile file("D:/Program Files/Android/SDK/.android/debug.keystore")
         }
     }
 
