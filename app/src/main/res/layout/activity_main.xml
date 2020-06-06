@@ -20,7 +20,7 @@
         android:text="切换图层" />
 
     <include
-        layout="@layout/main"
+        layout="@layout/float_button"
         />
 
 </RelativeLayout >
