@@ -8,7 +8,7 @@
     <Button
         android:id="@+id/menu"
         style="@style/MenuStyle"
-        android:background="@drawable/ic_menu" />
+        android:background="@drawable/ic_plus" />
 
     <Button
             android:id="@+id/item1"

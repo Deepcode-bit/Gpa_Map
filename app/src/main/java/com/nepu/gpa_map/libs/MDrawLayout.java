@@ -5,9 +5,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
+
+import com.nepu.gpa_map.R;
 
 public class MDrawLayout extends RelativeLayout implements View.OnTouchListener{
 
@@ -16,14 +19,14 @@ public class MDrawLayout extends RelativeLayout implements View.OnTouchListener{
 
     public MDrawLayout(Context context) {
         super(context);
-        Init();
+        Init(context);
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private void Init(){
+    private void Init(Context context){
         duringTime=300;
         isPullOut=false;
-        this.setBackgroundColor(Color.WHITE);
+        this.addView(inflater(context));
         this.setOnTouchListener(this);
     }
 
@@ -31,7 +34,7 @@ public class MDrawLayout extends RelativeLayout implements View.OnTouchListener{
      * 拉出抽屉布局的方法
      */
     public void PullOut(){
-        ObjectAnimator transXAnim = ObjectAnimator.ofFloat(this, "X", -(float)(Global.width * 0.3));
+        ObjectAnimator transXAnim = ObjectAnimator.ofFloat(this, "X", -(float)(Global.width * 0.2));
         transXAnim.setDuration(duringTime);
         transXAnim.start();
         isPullOut=true;
@@ -53,5 +56,10 @@ public class MDrawLayout extends RelativeLayout implements View.OnTouchListener{
             Log.i("PBF", "touched");
         }
         return true;
+    }
+
+    private View inflater(Context context){
+        LayoutInflater inflater=LayoutInflater.from(context);
+        return inflater.inflate(R.layout.drawer_layout,null);
     }
 }
