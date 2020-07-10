@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mUiSettings.setScaleControlsEnabled(true);
         mUiSettings.setMyLocationButtonEnabled(true);
         aMap.setMyLocationEnabled(true);
-        drawLayout=new MDrawLayout(this);
+        drawLayout=new MDrawLayout(this,aMap);
         transView=new View(this);
         transView.setBackgroundColor(Color.GRAY);
         transView.setAlpha(0.5f);
