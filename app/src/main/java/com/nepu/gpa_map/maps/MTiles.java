@@ -3,6 +3,7 @@ package com.nepu.gpa_map.maps;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
+import android.util.Log;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.model.TileOverlay;
@@ -88,7 +89,7 @@ public class MTiles {
     /**
      * 加载离线瓦片数据
      */
-    public void useOfflineTile(final String path, final String nameEx) {
+    public void useOfflineTile(final String path) {
         if (mtileOverlay != null){
             mtileOverlay.remove();
         }
@@ -97,8 +98,7 @@ public class MTiles {
                     @Override
                     public URL getTileUrl(int x, int y, int zoom) {
                         try {
-                            final String LocalUrl = path +zoom+"/"+x+"/"+y+ nameEx;
-
+                            final String LocalUrl = "file:///"+path + "/"+zoom + "/" + x + "/" + y + ".jpg";
                             return new URL(LocalUrl);
                         } catch (Exception e) {
                             e.printStackTrace();

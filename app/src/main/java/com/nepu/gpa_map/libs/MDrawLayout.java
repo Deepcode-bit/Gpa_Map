@@ -4,14 +4,10 @@ import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
-import android.text.Layout;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
@@ -106,5 +102,19 @@ public class MDrawLayout extends RelativeLayout implements View.OnTouchListener{
             tiles[i].setOnTouchListener(this);
         }
         mTiles=new MTiles(aMap);
+    }
+
+    public void AddOnlineTile(String url){
+        mTiles.useOMCMap(url);
+        for(int i=0;i<5;i++){
+                tiles[i].setBackground(null);
+        }
+    }
+
+    public void AddOfflineTile(String path){
+        mTiles.useOfflineTile(path);
+        for(int i=0;i<5;i++){
+            tiles[i].setBackground(null);
+        }
     }
 }
