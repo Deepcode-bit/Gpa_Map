@@ -79,7 +79,7 @@ public class FilePicker {
         lFilePicker.withIsGreater(false);//过滤文件大小 小于指定大小的文件
         lFilePicker.withIconStyle(Constant.ICON_STYLE_GREEN);//默认ICON_STYLE_YELLOW
         lFilePicker.withMutilyMode(false);//限制单选或者多选
-        lFilePicker.withFileSize(500 * 1024);//指定文件大小为500K
+        lFilePicker.withFileSize(500 * 1024 * 1024);//指定文件大小为500K
 
         return lFilePicker;
     }
