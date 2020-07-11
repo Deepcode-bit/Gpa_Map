@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
     <color name="colorWhite">#FFFFFF</color>
+    <color name="sandybrown">#f4a460</color> <!-- 沙褐色 -->
+    <color name="skyblue">#87ceeb</color> <!-- 天蓝色 -->
+    <color name="snow">#fffafa</color> <!-- 雪白色 -->
+    <color name="lightpink">#ffb6c1</color> <!-- 亮粉红色 -->
 </resources>

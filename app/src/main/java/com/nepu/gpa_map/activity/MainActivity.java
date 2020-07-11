@@ -8,15 +8,20 @@ import android.Manifest;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.method.DigitsKeyListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -24,6 +29,8 @@ import com.amap.api.maps.AMap;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.UiSettings;
 import com.amap.api.maps.model.MyLocationStyle;
+import com.leon.lfilepickerlibrary.LFilePicker;
+import com.leon.lfilepickerlibrary.utils.Constant;
 import com.nepu.gpa_map.R;
 import com.nepu.gpa_map.libs.Global;
 import com.nepu.gpa_map.libs.MDrawLayout;
@@ -46,7 +53,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button mItemButton3;
     private Button mItemButton4;
 
+    private Button importCoverage;
+    private Button importOverlay;
+
     private boolean mIsMenuOpen = false;
+
+    private final int REQUESTCODE_FROM_ACTIVITY = 1000;
+    private final int REQUESTCODE_TO_OVERLAY = 2000;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +180,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mItemButton4 = (Button) findViewById(R.id.item4);
         mItemButton4.setOnClickListener(this);
+
+        importCoverage = findViewById(R.id.import_coverage);
+        importCoverage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showListDialog();
+            }
+        });
+
+        importOverlay = findViewById(R.id.import_overlay);
+        importOverlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new LFilePicker()
+                        .withActivity(MainActivity.this)
+                        .withRequestCode(REQUESTCODE_FROM_ACTIVITY)
+                        .withFileFilter(new String[]{".jpg", ".png", "jpeg"})//过滤文件类型
+                        .withStartPath("/storage/emulated/0/Pictures")//指定初始显示路径
+                        .withIsGreater(false)//过滤文件大小 小于指定大小的文件
+                        .withIconStyle(Constant.ICON_STYLE_GREEN)//默认ICON_STYLE_YELLOW
+                        .withMutilyMode(false)//限制单选或者多选
+                        .withFileSize(500 * 1024)//指定文件大小为500K
+                        .start();
+            }
+        });
     }
 
     @Override
@@ -251,5 +290,72 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         set.setDuration(1 * 500).start();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
+                //如果是文件选择模式，需要获取选择的所有文件的路径集合
+                //List<String> list = data.getStringArrayListExtra(Constant.RESULT_INFO);//Constant.RESULT_INFO == "paths"
+                List<String> list = data.getStringArrayListExtra("paths");
+                Toast.makeText(getApplicationContext(), "选中了" + list.size() + "个文件", Toast.LENGTH_SHORT).show();
+                for (String path : list) {
+                    //path就是获取到的文件路径   由于是单选其实list里面就只有一个  就这么写着了万一哪天需要多选了呢
+                    Toast.makeText(getApplicationContext(), "选中的路径为" + path, Toast.LENGTH_SHORT).show();
+                }
+
+            } else if (requestCode == REQUESTCODE_TO_OVERLAY) {
+                //如果是文件夹选择模式，需要获取选择的文件夹路径
+                String path = data.getStringExtra("path");
+                Toast.makeText(getApplicationContext(), "选中的路径为" + path, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void showListDialog() {
+        final String[] items = { "在线导入","离线导入"};
+        AlertDialog.Builder listDialog =
+                new AlertDialog.Builder(MainActivity.this, R.style.AlertDialogBackground);
+        listDialog.setTitle("请选择导入方式");
+        listDialog.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == 1) {
+                    new LFilePicker()
+                            .withActivity(MainActivity.this)
+                            .withRequestCode(REQUESTCODE_TO_OVERLAY)
+                            .withStartPath("/storage/emulated/0/Pictures")//指定初始显示路径
+                            .withChooseMode(false)//设置文件夹选择模式，true（默认）选择文件，false设置文件夹
+                            .start();
+                } else {
+                    //在线导入
+                    final EditText editText = new EditText(MainActivity.this);
+                    String digits = "0123456789abcdefghigklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:/?";
+                    editText.setKeyListener(DigitsKeyListener.getInstance(digits));//限制输入格式
+
+                    AlertDialog.Builder urlDialog = new AlertDialog.Builder(MainActivity.this);
+                    urlDialog.setTitle("请输入在线地图源链接");
+                    urlDialog.setView(editText);
+                    urlDialog.setCancelable(false);
+                    urlDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //获取输入得链接  先用着后面我设置链接格式
+                            String url = String.valueOf(editText.getText());
+                        }
+                    });
+                    urlDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+                    urlDialog.show();
+                }
+            }
+        });
+        listDialog.show();
     }
 }

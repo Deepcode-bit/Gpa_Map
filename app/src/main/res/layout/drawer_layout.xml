@@ -118,10 +118,20 @@
 
     </TableRow>
     <Button
-        android:text="导入图层"
+        android:id="@+id/import_coverage"
+        android:text="导入瓦片图"
         android:layout_height="50dp"
         android:layout_width="match_parent"
         android:layout_marginTop="250dp"
+        android:background="@color/sandybrown"
+        android:layout_gravity="bottom"/>
+    <Button
+        android:id="@+id/import_overlay"
+        android:text="导入覆盖物"
+        android:layout_height="50dp"
+        android:layout_width="match_parent"
+        android:layout_marginTop="5dp"
+        android:background="@color/skyblue"
         android:layout_gravity="bottom"/>
 
 </TableLayout>
