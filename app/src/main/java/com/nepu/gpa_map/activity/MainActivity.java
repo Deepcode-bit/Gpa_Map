@@ -335,23 +335,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String digits = "0123456789abcdefghigklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:/?";
                     editText.setKeyListener(DigitsKeyListener.getInstance(digits));//限制输入格式
 
-                    AlertDialog.Builder urlDialog = new AlertDialog.Builder(MainActivity.this);
-                    urlDialog.setTitle("请输入在线地图源链接");
-                    urlDialog.setView(editText);
-                    urlDialog.setCancelable(false);
-                    urlDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            //获取输入得链接  先用着后面我设置链接格式
-                            String url = String.valueOf(editText.getText());
-                        }
-                    });
-                    urlDialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
+                    AlertDialog.Builder urlDialog = new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("请输入在线地图源链接")
+                            .setView(editText)
+                            .setCancelable(false)
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //获取输入得链接  先用着后面我设置链接格式
+                                    String url = String.valueOf(editText.getText());
+                                }
+                            })
+                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
 
-                        }
-                    });
+                                }
+                            });
+
                     urlDialog.show();
                 }
             }
