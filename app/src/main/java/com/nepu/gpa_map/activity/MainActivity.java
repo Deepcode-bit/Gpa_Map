@@ -28,9 +28,6 @@ import android.widget.Toast;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.UiSettings;
-import com.amap.api.maps.model.GroundOverlay;
-import com.amap.api.maps.model.GroundOverlayOptions;
-import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.leon.lfilepickerlibrary.LFilePicker;
 import com.leon.lfilepickerlibrary.utils.Constant;
@@ -39,6 +36,7 @@ import com.nepu.gpa_map.libs.Global;
 import com.nepu.gpa_map.libs.MDrawLayout;
 import com.nepu.gpa_map.maps.MTiles;
 import com.nepu.gpa_map.maps.OverLayer;
+import com.nepu.gpa_map.util.FilePicker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,8 +58,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button importOverlay;
 
     private boolean mIsMenuOpen = false;
-    private boolean isOverLayer=false;
-    private GroundOverlay overlay;
 
     private final int REQUESTCODE_FROM_ACTIVITY = 1000;
     private final int REQUESTCODE_TO_OVERLAY = 2000;
@@ -190,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         importCoverage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showListDialog();
+                FilePicker.showListDialog(MainActivity.this, REQUESTCODE_TO_OVERLAY);
             }
         });
 
@@ -198,22 +194,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         importOverlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(isOverLayer) {
-                    overlay.remove();
-                    importOverlay.setText("导入覆盖物");
-                    isOverLayer = false;
-                }else {
-                    new LFilePicker()
-                            .withActivity(MainActivity.this)
-                            .withRequestCode(REQUESTCODE_FROM_ACTIVITY)
-                            .withFileFilter(new String[]{".jpg", ".png", "jpeg"})//过滤文件类型
-                            .withStartPath("/storage/emulated/0/Pictures")//指定初始显示路径
-                            .withIsGreater(false)//过滤文件大小 小于指定大小的文件
-                            .withIconStyle(Constant.ICON_STYLE_GREEN)//默认ICON_STYLE_YELLOW
-                            .withMutilyMode(false)//限制单选或者多选
-                            .withFileSize(50000 * 1024)//指定文件大小为50MB
-                            .start();
-                }
+                FilePicker.newFilePicker(MainActivity.this, REQUESTCODE_FROM_ACTIVITY).start();
             }
         });
     }
@@ -299,98 +280,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 ObjectAnimator.ofFloat(view, "scaleY", 1f, 0.1f),
                 ObjectAnimator.ofFloat(view, "alpha", 1f, 0f));
 
-
         set.setDuration(1 * 500).start();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
-                //如果是文件选择模式，需要获取选择的所有文件的路径集合
-                //List<String> list = data.getStringArrayListExtra(Constant.RESULT_INFO);//Constant.RESULT_INFO == "paths"
-                List<String> list = data.getStringArrayListExtra("paths");
-                Toast.makeText(getApplicationContext(), "选中了" + list.size() + "个文件", Toast.LENGTH_SHORT).show();
-                for (final String path : list) {
-                    //path就是获取到的文件路径   由于是单选其实list里面就只有一个  就这么写着了万一哪天需要多选了呢
-                    final EditText editText = new EditText(MainActivity.this);
-                    AlertDialog.Builder XYDialog = new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("请分别输入覆盖物西南和东北两点经纬度(X1,Y1,Y2,Y2)")
-                            .setView(editText)
-                            .setCancelable(false)
-                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    //获取输入得链接  先用着后面我设置链接格式
-                                    String[] XY = String.valueOf(editText.getText()).split(",");
-                                    LatLng x = new LatLng(Double.parseDouble(XY[0]), Double.parseDouble(XY[1]));
-                                    LatLng y = new LatLng(Double.parseDouble(XY[2]), Double.parseDouble(XY[3]));
-                                    overlay = aMap.addGroundOverlay(OverLayer.GetOverLayer(path, x, y));
-                                    isOverLayer = true;
-                                    importOverlay.setText("清除覆盖物");
-                                }
-                            })
-                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                }
-                            });
-                    XYDialog.show();
-                }
-            } else if (requestCode == REQUESTCODE_TO_OVERLAY) {
-                //如果是文件夹选择模式，需要获取选择的文件夹路径
-                String path = data.getStringExtra("path");
-                drawLayout.AddOfflineTile(path);
-            }
-        }
+        FilePicker.judgeSelectType(requestCode, resultCode, REQUESTCODE_TO_OVERLAY, REQUESTCODE_FROM_ACTIVITY, data, MainActivity.this);
     }
 
-    private void showListDialog() {
-        final String[] items = { "在线导入","离线导入"};
-        AlertDialog.Builder listDialog =
-                new AlertDialog.Builder(MainActivity.this, R.style.AlertDialogBackground);
-        listDialog.setTitle("请选择导入方式");
-        listDialog.setItems(items, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (which == 1) {
-                    new LFilePicker()
-                            .withActivity(MainActivity.this)
-                            .withRequestCode(REQUESTCODE_TO_OVERLAY)
-                            .withStartPath("/storage/emulated/0/Pictures")//指定初始显示路径
-                            .withChooseMode(false)//设置文件夹选择模式，true（默认）选择文件，false设置文件夹
-                            .start();
-                } else {
-                    //在线导入
-                    final EditText editText = new EditText(MainActivity.this);
-                    //String digits = "0123456789abcdefghigklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:/?";
-                    //editText.setKeyListener(DigitsKeyListener.getInstance(digits));//限制输入格式
-
-                    AlertDialog.Builder urlDialog = new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("请输入在线地图源链接")
-                            .setView(editText)
-                            .setCancelable(false)
-                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    //获取输入得链接  先用着后面我设置链接格式
-                                    String url = String.valueOf(editText.getText());
-                                    drawLayout.AddOnlineTile(url);
-                                }
-                            })
-                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-
-                                }
-                            });
-
-                    urlDialog.show();
-                }
-            }
-        });
-        listDialog.show();
-    }
 }
