@@ -28,6 +28,9 @@ import android.widget.Toast;
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.UiSettings;
+import com.amap.api.maps.model.GroundOverlay;
+import com.amap.api.maps.model.GroundOverlayOptions;
+import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.leon.lfilepickerlibrary.LFilePicker;
 import com.leon.lfilepickerlibrary.utils.Constant;
@@ -36,7 +39,10 @@ import com.nepu.gpa_map.libs.Global;
 import com.nepu.gpa_map.libs.MDrawLayout;
 import com.nepu.gpa_map.maps.MTiles;
 import com.nepu.gpa_map.maps.OverLayer;
+import com.nepu.gpa_map.util.AnimatorUtil;
+import com.nepu.gpa_map.util.DynamicPermission;
 import com.nepu.gpa_map.util.FilePicker;
+import com.nepu.gpa_map.util.SdCardUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,22 +64,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button importOverlay;
 
     private boolean mIsMenuOpen = false;
+    private boolean isOverLayer=false;
+    private GroundOverlay overlay;
 
     private final int REQUESTCODE_FROM_ACTIVITY = 1000;
     private final int REQUESTCODE_TO_OVERLAY = 2000;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mLayout= (RelativeLayout) getLayoutInflater().inflate(R.layout.activity_main, null);
         setContentView(mLayout);
-        PermissionAsk();//申请权限
+        DynamicPermission.permissionAsk(MainActivity.this);//申请权限
         mMapView=findViewById(R.id.map_view);
         mMapView.onCreate(savedInstanceState);
         InitData();//初始化变量
         InitInterface();//初始化界面
         initView();//初始化菜单
+        SdCardUtil.initFolder();
     }
 
     private void InitInterface(){
@@ -145,27 +153,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mMapView.onPause();
     }
 
-    /**
-     * 动态权限申请
-     */
-    private void PermissionAsk(){
-        //动态申请权限
-        List<String> permissionList = new ArrayList<>();
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            permissionList.add(Manifest.permission.READ_PHONE_STATE);
-        }
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-        if (!permissionList.isEmpty()) {
-            String[] permissions = permissionList.toArray(new String[permissionList.size()]);
-            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1);
-        }
-    }
-
     private void initView() {
         mMenuButton = (Button) findViewById(R.id.menu);
         mMenuButton.setOnClickListener(this);
@@ -186,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         importCoverage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FilePicker.showListDialog(MainActivity.this, REQUESTCODE_TO_OVERLAY);
+                FilePicker.showListDialog(MainActivity.this, REQUESTCODE_TO_OVERLAY, drawLayout);
             }
         });
 
@@ -194,7 +181,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         importOverlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FilePicker.newFilePicker(MainActivity.this, REQUESTCODE_FROM_ACTIVITY).start();
+                if(isOverLayer) {
+                    overlay.remove();
+                    importOverlay.setText("导入覆盖物");
+                    isOverLayer = false;
+                }else {
+                    FilePicker.newFilePicker(MainActivity.this, REQUESTCODE_FROM_ACTIVITY).start();
+                }
             }
         });
     }
@@ -204,16 +197,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (v == mMenuButton) {
             if (!mIsMenuOpen) {
                 mIsMenuOpen = true;
-                doAnimateOpen(mItemButton1, 0, 4, 300);
-                doAnimateOpen(mItemButton2, 1, 4, 300);
-                doAnimateOpen(mItemButton3, 2, 4, 300);
-                doAnimateOpen(mItemButton4, 3, 4, 300);
+                AnimatorUtil.doAnimateOpen(mItemButton1, 0, 4, 300);
+                AnimatorUtil.doAnimateOpen(mItemButton2, 1, 4, 300);
+                AnimatorUtil.doAnimateOpen(mItemButton3, 2, 4, 300);
+                AnimatorUtil.doAnimateOpen(mItemButton4, 3, 4, 300);
             } else {
                 mIsMenuOpen = false;
-                doAnimateClose(mItemButton1, 0, 4, 300);
-                doAnimateClose(mItemButton2, 1, 4, 300);
-                doAnimateClose(mItemButton3, 2, 4, 300);
-                doAnimateClose(mItemButton4, 3, 4, 300);
+                AnimatorUtil.doAnimateClose(mItemButton1, 0, 4, 300);
+                AnimatorUtil.doAnimateClose(mItemButton2, 1, 4, 300);
+                AnimatorUtil.doAnimateClose(mItemButton3, 2, 4, 300);
+                AnimatorUtil.doAnimateClose(mItemButton4, 3, 4, 300);
             }
         } else {
             switch (v.getId()){
@@ -227,66 +220,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    /**
-     * 打开菜单的动画
-     * @param view 执行动画的view
-     * @param index view在动画序列中的顺序,从0开始
-     * @param total 动画序列的个数
-     * @param radius 动画半径
-     *
-     *  Math.sin(x):x -- 为number类型的弧度，角度乘以0.017(2π/360)可以转变为弧度
-     */
-    private void doAnimateOpen(View view, int index, int total, int radius) {
-        if (view.getVisibility() != View.VISIBLE) {
-            view.setVisibility(View.VISIBLE);
-        }
-        double degree = Math.toRadians(90)/(total - 1) * index;
-//        double degree = Math.PI/ ((total - 1) * 2)  * index;
-        int translationX = -(int) (radius * Math.sin(degree));
-        int translationY = -(int) (radius * Math.cos(degree));
-        AnimatorSet set = new AnimatorSet();
-        //包含平移、缩放和透明度动画
-        set.playTogether(
-                ObjectAnimator.ofFloat(view, "translationX", 0, translationX),
-                ObjectAnimator.ofFloat(view, "translationY", 0, translationY),
-                ObjectAnimator.ofFloat(view, "scaleX", 0f, 1f),
-                ObjectAnimator.ofFloat(view, "scaleY", 0f, 1f),
-                ObjectAnimator.ofFloat(view, "alpha", 0f, 1));
-        //动画周期为500ms
-        set.setDuration(1 * 500).start();
-    }
-
-    /**
-     * 关闭菜单的动画
-     * @param view 执行动画的view
-     * @param index view在动画序列中的顺序
-     * @param total 动画序列的个数
-     * @param radius 动画半径
-     */
-    private void doAnimateClose(final View view, int index, int total,
-                                int radius) {
-        if (view.getVisibility() != View.VISIBLE) {
-            view.setVisibility(View.VISIBLE);
-        }
-        double degree = Math.PI * index / ((total - 1) * 2);
-        int translationX = -(int) (radius * Math.sin(degree));
-        int translationY = -(int) (radius * Math.cos(degree));
-        AnimatorSet set = new AnimatorSet();
-        //包含平移、缩放和透明度动画
-        set.playTogether(
-                ObjectAnimator.ofFloat(view, "translationX", translationX, 0),
-                ObjectAnimator.ofFloat(view, "translationY", translationY, 0),
-                ObjectAnimator.ofFloat(view, "scaleX", 1f, 0.1f),
-                ObjectAnimator.ofFloat(view, "scaleY", 1f, 0.1f),
-                ObjectAnimator.ofFloat(view, "alpha", 1f, 0f));
-
-        set.setDuration(1 * 500).start();
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        FilePicker.judgeSelectType(requestCode, resultCode, REQUESTCODE_TO_OVERLAY, REQUESTCODE_FROM_ACTIVITY, data, MainActivity.this);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
+                //如果是文件选择模式，需要获取选择的所有文件的路径集合
+                //List<String> list = data.getStringArrayListExtra(Constant.RESULT_INFO);//Constant.RESULT_INFO == "paths"
+                List<String> list = data.getStringArrayListExtra("paths");
+                Toast.makeText(getApplicationContext(), "选中了" + list.size() + "个文件", Toast.LENGTH_SHORT).show();
+                for (final String path : list) {
+                    //path就是获取到的文件路径   由于是单选其实list里面就只有一个  就这么写着了万一哪天需要多选了呢
+                    final EditText editText = new EditText(MainActivity.this);
+                    AlertDialog.Builder XYDialog = new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("请分别输入覆盖物西南和东北两点经纬度(X1,Y1,Y2,Y2)")
+                            .setView(editText)
+                            .setCancelable(false)
+                            .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //获取输入得链接  先用着后面我设置链接格式
+                                    String[] XY = String.valueOf(editText.getText()).split(",");
+                                    LatLng x = new LatLng(Double.parseDouble(XY[0]), Double.parseDouble(XY[1]));
+                                    LatLng y = new LatLng(Double.parseDouble(XY[2]), Double.parseDouble(XY[3]));
+                                    overlay = aMap.addGroundOverlay(OverLayer.GetOverLayer(path, x, y));
+                                    isOverLayer = true;
+                                    importOverlay.setText("清除覆盖物");
+                                }
+                            })
+                            .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            });
+                    XYDialog.show();
+                }
+            } else if (requestCode == REQUESTCODE_TO_OVERLAY) {
+                //如果是文件夹选择模式，需要获取选择的文件夹路径
+                String path = data.getStringExtra("path");
+                drawLayout.AddOfflineTile(path);
+            }
+        }
     }
 
 }
